@@ -1,292 +1,155 @@
-# Movie Ratings Analysis
+# Movie Ratings Analysis with PySpark
 
-## **Prerequisites**
+This project performs various analyses on movie ratings data using PySpark's structured API. It consists of three main tasks that help analyze user behavior, identify churn risk, and track movie watching trends.
 
-Before starting the assignment, ensure you have the following software installed and properly configured on your machine:
-
-1. **Python 3.x**:
-   - [Download and Install Python](https://www.python.org/downloads/)
-   - Verify installation:
-     ```bash
-     python3 --version
-     ```
-
-2. **PySpark**:
-   - Install using `pip`:
-     ```bash
-     pip install pyspark
-     ```
-
-3. **Apache Spark**:
-   - Ensure Spark is installed. You can download it from the [Apache Spark Downloads](https://spark.apache.org/downloads.html) page.
-   - Verify installation by running:
-     ```bash
-     spark-submit --version
-     ```
-
-4. **Docker & Docker Compose** (Optional):
-   - If you prefer using Docker for setting up Spark, ensure Docker and Docker Compose are installed.
-   - [Docker Installation Guide](https://docs.docker.com/get-docker/)
-   - [Docker Compose Installation Guide](https://docs.docker.com/compose/install/)
-
-## **Setup Instructions**
-
-### **1. Project Structure**
-
-Ensure your project directory follows the structure below:
+## Project Structure
 
 ```
-MovieRatingsAnalysis/
+handson-7-spark-structured-api-movie-ratings-analysis/
 ├── input/
 │   └── movie_ratings_data.csv
-├── outputs/
+├── Outputs/
 │   ├── binge_watching_patterns.csv
-│   ├──churn_risk_users.csv
+│   ├── churn_risk_users.csv
 │   └── movie_watching_trends.csv
 ├── src/
 │   ├── task1_binge_watching_patterns.py
 │   ├── task2_churn_risk_users.py
 │   └── task3_movie_watching_trends.py
-├── docker-compose.yml
-└── README.md
+├── README.md
+└── docker-compose.yml
 ```
 
+## Dataset
 
+The input dataset (`movie_ratings_data.csv`) contains movie ratings data with the following schema:
+- UserID (INT)
+- MovieID (INT)
+- MovieTitle (STRING)
+- Genre (STRING)
+- Rating (FLOAT)
+- ReviewCount (INT)
+- WatchedYear (INT)
+- UserLocation (STRING)
+- AgeGroup (STRING)
+- StreamingPlatform (STRING)
+- WatchTime (INT)
+- IsBingeWatched (BOOLEAN)
+- SubscriptionStatus (STRING)
 
+## Approach
 
+### General Approach
 
+This project uses PySpark's structured API to analyze large-scale movie ratings data efficiently. The approach follows these common steps across all tasks:
 
+1. **Data Loading**: Each task initializes a SparkSession and loads data using a predefined schema
+2. **Data Transformation**: Task-specific transformations are applied using PySpark DataFrame operations
+3. **Result Generation**: Results are computed and formatted according to the requirements
+4. **Output Writing**: Results are converted to pandas DataFrames and written to CSV files
 
+### Task-Specific Approaches
 
+#### Task 1: Detect Binge Watching Patterns
 
-- **input/**: Contains the `movie_ratings_data.csv` dataset.
-- **outputs/**: Directory where the results of each task will be saved.
-- **src/**: Contains the individual Python scripts for each task.
-- **docker-compose.yml**: Docker Compose configuration file to set up Spark.
-- **README.md**: Assignment instructions and guidelines.
+For this task, the approach involves:
+- Filtering the dataset to isolate users who have binge-watched movies
+- Grouping the filtered data by age groups
+- Performing an aggregation to count users in each group
+- Calculating the percentage of binge-watchers relative to the total users in each age group
+- Rounding the percentages to two decimal places for readability
 
-### **2. Running the Analysis Tasks**
+#### Task 2: Identify Churn Risk Users
 
-You can run the analysis tasks either locally or using Docker.
+The approach for identifying churn risk:
+- Applying multiple filter conditions simultaneously to identify users with canceled subscriptions and low watch time
+- Counting the distinct users that meet these criteria
+- Presenting the results in a format that highlights the potential churn risk segment
 
-#### **a. Running Locally**
+#### Task 3: Analyze Movie Watching Trends
 
-1. **Navigate to the Project Directory**:
-   ```bash
-   cd MovieRatingsAnalysis/
-   ```
+For trend analysis:
+- Grouping data by the year movies were watched
+- Counting the number of movie watches per year
+- Ordering the results by year to create a chronological view of trends
+- Using the resulting time series to identify patterns in movie watching behavior
 
-2. **Execute Each Task Using `spark-submit`**:
-   ```bash
-   spark-submit src/task1_binge_watching_patterns.py
-   spark-submit src/task2_churn_risk_users.py
-   spark-submit src/task3_movie_watching_trends.py
-   ```
+## Findings
 
-3. **Verify the Outputs**:
-   Check the `outputs/` directory for the resulting files:
-   ```bash
-   ls outputs/
-   ```
-   You should see:
-   - `binge_watching_patterns.txt`
-   - `churn_risk_users.csv`
-   - `movie_watching_trends.csv`
+### Binge Watching Patterns
 
-#### **b. Running with Docker (Optional)**
+Based on the analysis, we found that:
+- Different age groups display varying tendencies toward binge-watching
+- The output shows the percentage of users in each age group (Teen, Adult, Senior) who engage in binge-watching
+- This information can help streaming platforms tailor content recommendations and release strategies for different age segments
 
-1. **Start the Spark Cluster**:
-   ```bash
-   docker-compose up -d
-   ```
+### Churn Risk Users
 
-2. **Access the Spark Master Container**:
-   ```bash
-   docker exec -it spark-master bash
-   ```
+Key findings about churn risk:
+- A specific segment of users exhibiting both canceled subscriptions and low watch time was identified
+- These users represent a critical cohort for potential re-engagement strategies
+- The count of such users provides a baseline for measuring the effectiveness of retention efforts
 
-3. **Navigate to the Spark Directory**:
-   ```bash
-   cd /opt/bitnami/spark/
-   ```
+### Movie Watching Trends
 
-4. **Run Your PySpark Scripts Using `spark-submit`**:
-   ```bash
-   spark-submit src/task1_binge_watching_patterns.py
-   spark-submit src/task2_churn_risk_users.py
-   spark-submit src/task3_movie_watching_trends.py
-   ```
+The trend analysis revealed:
+- Patterns in movie watching behavior over different years
+- Years with higher movie consumption, potentially correlating with major releases or external factors
+- Potential seasonal or annual trends that could inform content acquisition and marketing strategies
 
-5. **Exit the Container**:
-   ```bash
-   exit
-   ```
+## Challenges Faced and Solutions
 
-6. **Verify the Outputs**:
-   On your host machine, check the `outputs/` directory for the resulting files.
+### Challenge 1: CSV Output Format
+**Challenge:** By default, Spark's `write.csv()` method creates a directory with part files rather than a single CSV file, which made it difficult to produce the expected output format.
 
-7. **Stop the Spark Cluster**:
-   ```bash
-   docker-compose down
-   ```
+**Solution:** Modified the `write_output` function to convert Spark DataFrames to pandas DataFrames and use pandas' `to_csv()` method, which directly writes a single CSV file. This approach eliminated the need for post-processing part files.
 
-## **Overview**
+### Challenge 2: Data Type Handling
+**Challenge:** Boolean values in the input data needed special handling, particularly for the `IsBingeWatched` column.
 
-In this assignment, you will leverage Spark Structured APIs to analyze a dataset containing employee information from various departments within an organization. Your goal is to extract meaningful insights related to employee satisfaction, engagement, concerns, and job titles. This exercise is designed to enhance your data manipulation and analytical skills using Spark's powerful APIs.
+**Solution:** Used explicit schema definition during data loading to ensure proper data type interpretation. Explicitly filtered boolean values using `col("IsBingeWatched") == True` syntax to ensure compatibility with Spark's SQL expression evaluation.
 
-## **Objectives**
+### Challenge 3: Output Format for Churn Risk Analysis
+**Challenge:** The expected output format for the churn risk analysis required a specific presentation that differed from the default aggregation output.
 
-By the end of this assignment, you should be able to:
+**Solution:** Created a custom DataFrame with the desired structure using `createDataFrame()` method with explicitly defined column names and a tuple containing the descriptive text and count value. This ensured the output matched the expected format while maintaining the analytical results.
 
-1. **Data Loading and Preparation**: Import and preprocess data using Spark Structured APIs.
-2. **Data Analysis**: Perform complex queries and transformations to address specific business questions.
-3. **Insight Generation**: Derive actionable insights from the analyzed data.
+### Challenge 4: Percentage Calculation and Rounding
+**Challenge:** Calculating accurate percentages of binge-watchers and ensuring proper rounding to two decimal places.
 
-## **Dataset**
+**Solution:** Used Spark's mathematical functions for division and the `spark_round` function to calculate and round percentages. Joined the DataFrames containing binge-watcher counts and total user counts before calculating percentages to ensure accurate ratio computation.
 
-## **Dataset: Advanced Movie Ratings & Streaming Trends**
+### Challenge 5: Resource Management
+**Challenge:** Efficient resource utilization when processing potentially large datasets.
 
-You will work with a dataset containing information about **100+ users** who rated movies across various streaming platforms. The dataset includes the following columns:
+**Solution:** Implemented proper SparkSession management with explicit `spark.stop()` calls to release resources after job completion. Used appropriate DataFrame operations like filtering early in the processing pipeline to reduce data volume in subsequent operations.
 
-| **Column Name**         | **Data Type**  | **Description** |
-|-------------------------|---------------|----------------|
-| **UserID**             | Integer       | Unique identifier for a user |
-| **MovieID**            | Integer       | Unique identifier for a movie |
-| **MovieTitle**         | String        | Name of the movie |
-| **Genre**             | String        | Movie genre (e.g., Action, Comedy, Drama) |
-| **Rating**            | Float         | User rating (1.0 to 5.0) |
-| **ReviewCount**       | Integer       | Total reviews given by the user |
-| **WatchedYear**       | Integer       | Year when the movie was watched |
-| **UserLocation**      | String        | User's country |
-| **AgeGroup**          | String        | Age category (Teen, Adult, Senior) |
-| **StreamingPlatform** | String        | Platform where the movie was watched |
-| **WatchTime**        | Integer       | Total watch time in minutes |
-| **IsBingeWatched**    | Boolean       | True if the user watched 3+ movies in a day |
-| **SubscriptionStatus** | String        | Subscription status (Active, Canceled) |
+## Implementation Details
 
----
+- Each task is implemented in a separate Python file
+- All tasks use PySpark's structured API for data processing
+- The `write_output` function was modified to write results directly to CSV files using pandas
+- Results are stored in the `Outputs` folder
 
+## Running the Code
 
+To run any of the tasks:
 
-### **Sample Data**
-
-Below is a snippet of the `movie_ratings_data.csv` to illustrate the data structure. Ensure your dataset contains at least 100 records for meaningful analysis.
-
-```
-UserID,MovieID,MovieTitle,Genre,Rating,ReviewCount,WatchedYear,UserLocation,AgeGroup,StreamingPlatform,WatchTime,IsBingeWatched,SubscriptionStatus
-1,101,Inception,Sci-Fi,4.8,12,2022,US,Adult,Netflix,145,True,Active
-2,102,Titanic,Romance,4.7,8,2021,UK,Adult,Amazon,195,False,Canceled
-3,103,Avengers: Endgame,Action,4.5,15,2023,India,Teen,Disney+,180,True,Active
-4,104,The Godfather,Crime,4.9,20,2020,US,Senior,Amazon,175,False,Active
-5,105,Forrest Gump,Drama,4.8,10,2022,Canada,Adult,Netflix,130,True,Active
-...
+```bash
+spark-submit src/task1_binge_watching_patterns.py
+spark-submit src/task2_churn_risk_users.py
+spark-submit src/task3_movie_watching_trends.py
 ```
 
-## **Assignment Tasks**
+## Dependencies
 
-You are required to complete the following three analysis tasks using Spark Structured APIs. Ensure that your analysis is well-documented, with clear explanations and any relevant visualizations or summaries.
+- PySpark
+- pandas
 
-### **1. Identify Departments with High Satisfaction and Engagement**
+## Conclusion
 
-**Objective:**
+This project demonstrates the power of PySpark's structured API for analyzing large-scale movie ratings data. By examining binge-watching patterns, identifying churn risk users, and analyzing movie watching trends, we can gain valuable insights into user behavior and preferences. These insights can inform content recommendation systems, retention strategies, and content acquisition decisions for streaming platforms.
 
-Determine which movies have an average watch time greater than 100 minutes and rank them based on user engagement.
+The modular structure of the code allows for easy extension to include additional analyses or to adapt to changes in the data schema. The use of pandas for output writing simplifies the process of generating readable CSV files from Spark DataFrames.
 
-**Tasks:**
-
-- **Filter Movies**: Select movies that have been watched for more than 100 minutes on average.
-- **Analyze Average Watch Time**: Compute the average watch time per user for each movie.
-- **Identify Top Movies**: List movies where the average watch time is among the highest.
-
-
-**Expected Outcome:**
-
-A list of departments meeting the specified criteria, along with the corresponding percentages.
-
-**Example Output:**
-
-| Age Group   | Binge Watchers | Percentage |
-|-------------|----------------|------------|
-| Teen        | 195            | 45%        |
-| Adult       | 145            | 38%        |
-
----
-
-### **2. Identify Churn Risk Users**  
-
-**Objective:**  
-
-Find users who are **at risk of churn** by identifying those with **canceled subscriptions and low watch time (<100 minutes)**.
-
-**Tasks:**  
-
-- **Filter Users**: Select users who have `SubscriptionStatus = 'Canceled'`.  
-- **Analyze Watch Time**: Identify users with `WatchTime < 100` minutes.  
-- **Count At-Risk Users**: Compute the total number of such users.  
-
-**Expected Outcome:**  
-
-A count of users who **canceled their subscriptions and had low engagement**, highlighting **potential churn risks**.
-
-**Example Output:**  
-
-
-|Churn Risk Users                                  |	Total Users |
-|--------------------------------------------------|--------------|
-|Users with low watch time & canceled subscriptions|	350         |
-
-
-
----
-
-### **3. Trend Analysis Over the Years**  
-
-**Objective:**  
-
-Analyze how **movie-watching trends** have changed over the years and find peak years for movie consumption.
-
-**Tasks:**  
-
-- **Group by Watched Year**: Count the number of movies watched in each year.  
-- **Analyze Trends**: Identify patterns and compare year-over-year growth in movie consumption.  
-- **Find Peak Years**: Highlight the years with the highest number of movies watched.  
-
-**Expected Outcome:**  
-
-A summary of **movie-watching trends** over the years, indicating peak years for streaming activity.
-
-**Example Output:**  
-
-| Watched Year | Movies watched |
-|--------------|----------------|
-| 2020         | 1200           |
-| 2021         | 1500           |
-| 2022         | 2100           |
-| 2023         | 2800           |
-
-
----
-
-## **Grading Criteria**
-
-Your assignment will be evaluated based on the following criteria:
-
-- **Question 1**: Correct identification of departments with over 50% high satisfaction and engagement (1 mark).
-- **Question 2**: Accurate analysis of employees who feel valued but didn’t suggest improvements, including proportion (1 mark).
-- **Question 3**: Proper comparison of engagement levels across job titles and correct identification of the top-performing job title (1 mark).
-
-**Total Marks: 3**
-
----
-
-## **Submission Guidelines**
-
-- **Code**: Submit all your PySpark scripts located in the `src/` directory.
-- **Report**: Include a report summarizing your findings for each task. Ensure that your report is well-structured, with clear headings and explanations.
-- **Data**: Ensure that the `movie_ratings_data.csv` used for analysis is included in the `data/` directory or provide a script for data generation if applicable.
-- **Format**: Submit your work in a zipped folder containing all necessary files.
-- **Deadline**: [Insert Deadline Here]
-
----
-
-Good luck, and happy analyzing!
+By overcoming the challenges described above, we've created a robust analytical solution that produces clean, useful outputs while leveraging the distributed processing capabilities of Spark for scalable data analysis.
